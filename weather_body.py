@@ -1,6 +1,8 @@
-import datetime, requests
+import datetime
+import requests
 from aiogram import Router, types
 from config import open_weather_token
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 router = Router()
 
@@ -25,16 +27,33 @@ async def get_weather(message: types.Message):
         if weather_forecast:
             cur_weather = weather_forecast["main"]["temp"]
             weather_description = weather_forecast["weather"][0]["main"]
-            wd = weather_description
+            code_to_smile = {
+                "Clear": "Ясно \U00002600",
+                "Clouds": "Облачно \U00002601",
+                "Rain": "Дождь \U00002614",
+                "Drizzle": "Дождь \U00002614",
+                "Thunderstorm": "Гроза \U000026A1",
+                "Snow": "Снег \U0001F328",
+                "Mist": "Туман \U0001F32B"
+            }
+            wd = code_to_smile.get(weather_description, "Посмотри в окно, не пойму что там за погода!")
             humidity = weather_forecast["main"]["humidity"]
             pressure = weather_forecast["main"]["pressure"]
             wind = weather_forecast["wind"]["speed"]
+            sunrise_timestamp = datetime.datetime.fromtimestamp(data["city"]["sunrise"])
+            sunset_timestamp = datetime.datetime.fromtimestamp(data["city"]["sunset"])
+            length_of_the_day = datetime.timedelta(seconds=data["city"]["sunset"] - data["city"]["sunrise"])
 
+            inline_markup = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text='Поделиться', switch_inline_query='')]
+            ])
             await message.reply(f"***{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}***\n"
                                 f"Прогноз погоды в городе {city} на {time_obj.strftime('%H:%M')}:\n"
                                 f"Температура: {cur_weather}C° {wd}\n"
                                 f"Влажность: {humidity}%\nДавление: {pressure} мм.рт.ст\nВетер: {wind} м/с\n"
-                                f"***Хорошего дня!***"
+                                f"Восход солнца: {sunrise_timestamp}\nЗакат солнца: {sunset_timestamp}\nПродолжительность дня: {length_of_the_day}\n"
+                                f"***Хорошего дня!***",
+                                reply_markup=inline_markup
                                 )
         else:
             await message.reply("Прогноз погоды на указанное время не найден.")
@@ -61,33 +80,29 @@ async def get_weather(message: types.Message):
             city = data["name"]
             cur_weather = data["main"]["temp"]
             weather_description = data["weather"][0]["main"]
-            if weather_description in code_to_smile:
-                wd = code_to_smile[weather_description]
-
-            else:
-                wd = "Посмотри в окно, не пойму что там за погода!"
+            wd = code_to_smile.get(weather_description, "Посмотри в окно, не пойму что там за погода!")
             humidity = data["main"]["humidity"]
             pressure = data["main"]["pressure"]
             wind = data["wind"]["speed"]
             sunrise_timestamp = datetime.datetime.fromtimestamp(data["sys"]["sunrise"])
             sunset_timestamp = datetime.datetime.fromtimestamp(data["sys"]["sunset"])
-            length_of_the_day = datetime.datetime.fromtimestamp(
-                data["sys"]["sunset"]) - datetime.datetime.fromtimestamp(
-                data["sys"]["sunrise"])
+            length_of_the_day = datetime.timedelta(seconds=data["sys"]["sunset"] - data["sys"]["sunrise"])
 
+            inline_markup = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text='Поделиться', switch_inline_query='')]
+            ])
             await message.reply(f"***{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}***\n"
                                 f"Погода в городе: {city}\nТемпература: {cur_weather}C° {wd}\n"
                                 f"Влажность: {humidity}%\nДавление: {pressure} мм.рт.ст\nВетер: {wind} м/с\n"
                                 f"Восход солнца: {sunrise_timestamp}\nЗакат солнца: {sunset_timestamp}\nПродолжительность дня: {length_of_the_day}\n"
-                                f"***Хорошего дня!***"
+                                f"***Хорошего дня!***",
+                                reply_markup=inline_markup
                                 )
 
 
         except:
             await message.reply("\U00002620 Извините, я не понимаю ваш запрос. Проверьте название города \U00002620")
             await message.reply("Предупреждение: Я принимаю запросы на русском и английском языках")
-
-
 
     except Exception as e:
         print(e)

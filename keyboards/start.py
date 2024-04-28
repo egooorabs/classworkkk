@@ -7,7 +7,8 @@ keyboard_start_next = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Погода☀️', callback_data='weather')],
         [InlineKeyboardButton(text='Помощь🆘', callback_data='help')],
         [InlineKeyboardButton(text='Версия💻', callback_data='version')],
-        [InlineKeyboardButton(text='Добавить кнопки⌨', callback_data='button')]
+        [InlineKeyboardButton(text='Добавить кнопки⌨', callback_data='button')],
+        [InlineKeyboardButton(text='Поделиться', switch_inline_query='')]
     ])
 
 keyboard_back = InlineKeyboardMarkup(inline_keyboard=[
@@ -17,8 +18,9 @@ keyboard_back = InlineKeyboardMarkup(inline_keyboard=[
 keyboard_back_next = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Погода☀️', callback_data='weather')],
         [InlineKeyboardButton(text='Помощь🆘', callback_data='help')],
-        [InlineKeyboardButton(text='Версия💻', callback_data='version')]
-        #[InlineKeyboardButton(text='Добавить кнопки⌨', callback_data='button')]
+        [InlineKeyboardButton(text='Версия💻', callback_data='version')],
+        [InlineKeyboardButton(text='Добавить кнопки⌨', callback_data='button')],
+        [InlineKeyboardButton(text='Поделиться', switch_inline_query='')]
     ])
 
 keyboard_markup = ReplyKeyboardMarkup(keyboard=[

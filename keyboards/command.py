@@ -5,8 +5,9 @@ inline_markup = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Погода☀️', callback_data='weather')],
         [InlineKeyboardButton(text='Помощь🆘', callback_data='help')],
         [InlineKeyboardButton(text='Версия💻', callback_data='version')],
-        [InlineKeyboardButton(text='Добавить кнопки⌨', callback_data='button')]
-    ])
+        [InlineKeyboardButton(text='Добавить кнопки⌨', callback_data='button')],
+        [InlineKeyboardButton(text='Поделиться', switch_inline_query='')]
+        ])
 
 keyboard_markup = ReplyKeyboardMarkup(keyboard=[
         [
