@@ -30,3 +30,7 @@ keyboard_markup = ReplyKeyboardMarkup(keyboard=[
             KeyboardButton(text="💻Версия💻", callback_data='version'),
         ]
     ], resize_keyboard=True)
+
+keyboard_share = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text='Поделиться', switch_inline_query='')]
+            ])

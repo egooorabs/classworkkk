@@ -2,7 +2,7 @@ import datetime
 import requests
 from aiogram import Router, types
 from config import open_weather_token
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from keyboards.start import *
 
 router = Router()
 
@@ -44,16 +44,14 @@ async def get_weather(message: types.Message):
             sunset_timestamp = datetime.datetime.fromtimestamp(data["city"]["sunset"])
             length_of_the_day = datetime.timedelta(seconds=data["city"]["sunset"] - data["city"]["sunrise"])
 
-            inline_markup = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text='Поделиться', switch_inline_query='')]
-            ])
+
             await message.reply(f"***{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}***\n"
                                 f"Прогноз погоды в городе {city} на {time_obj.strftime('%H:%M')}:\n"
                                 f"Температура: {cur_weather}C° {wd}\n"
                                 f"Влажность: {humidity}%\nДавление: {pressure} мм.рт.ст\nВетер: {wind} м/с\n"
                                 f"Восход солнца: {sunrise_timestamp}\nЗакат солнца: {sunset_timestamp}\nПродолжительность дня: {length_of_the_day}\n"
                                 f"***Хорошего дня!***",
-                                reply_markup=inline_markup
+                                reply_markup=keyboard_share
                                 )
         else:
             await message.reply("Прогноз погоды на указанное время не найден.")
@@ -88,15 +86,13 @@ async def get_weather(message: types.Message):
             sunset_timestamp = datetime.datetime.fromtimestamp(data["sys"]["sunset"])
             length_of_the_day = datetime.timedelta(seconds=data["sys"]["sunset"] - data["sys"]["sunrise"])
 
-            inline_markup = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text='Поделиться', switch_inline_query='')]
-            ])
+
             await message.reply(f"***{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}***\n"
                                 f"Погода в городе: {city}\nТемпература: {cur_weather}C° {wd}\n"
                                 f"Влажность: {humidity}%\nДавление: {pressure} мм.рт.ст\nВетер: {wind} м/с\n"
                                 f"Восход солнца: {sunrise_timestamp}\nЗакат солнца: {sunset_timestamp}\nПродолжительность дня: {length_of_the_day}\n"
                                 f"***Хорошего дня!***",
-                                reply_markup=inline_markup
+                                reply_markup=keyboard_share
                                 )
 
 
