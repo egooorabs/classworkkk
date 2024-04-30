@@ -3,8 +3,10 @@ import requests
 from aiogram import Router, types
 from config import open_weather_token
 from keyboards.start import *
+from db import Database
 
 router = Router()
+db = Database('database.db')
 
 @router.message()
 async def get_weather(message: types.Message):
@@ -44,6 +46,9 @@ async def get_weather(message: types.Message):
             sunset_timestamp = datetime.datetime.fromtimestamp(data["city"]["sunset"])
             length_of_the_day = datetime.timedelta(seconds=data["city"]["sunset"] - data["city"]["sunrise"])
 
+            if message.chat.type == 'private':
+                if not await db.user_exists(message.from_user.id):
+                    await db.add_user(message.from_user.id)
 
             await message.reply(f"***{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}***\n"
                                 f"Прогноз погоды в городе {city} на {time_obj.strftime('%H:%M')}:\n"
@@ -86,6 +91,9 @@ async def get_weather(message: types.Message):
             sunset_timestamp = datetime.datetime.fromtimestamp(data["sys"]["sunset"])
             length_of_the_day = datetime.timedelta(seconds=data["sys"]["sunset"] - data["sys"]["sunrise"])
 
+            if message.chat.type == 'private':
+                if not await db.user_exists(message.from_user.id):
+                    await db.add_user(message.from_user.id)
 
             await message.reply(f"***{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}***\n"
                                 f"Погода в городе: {city}\nТемпература: {cur_weather}C° {wd}\n"
