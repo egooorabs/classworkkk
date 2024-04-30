@@ -2,10 +2,12 @@ import asyncio
 from aiogram import Bot, Dispatcher, Router
 from config import tg_bot_token
 from handlers import include_routers
+from db import Database
 
 
 bot = Bot(token=tg_bot_token)
 dp = Dispatcher()
+db = Database('database.db')
 
 router = Router()
 dp.include_router(router)

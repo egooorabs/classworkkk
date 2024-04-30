@@ -2,11 +2,12 @@ from aiogram import types, Router, F
 from aiogram.filters import Command
 from aiogram.types import BotCommand, CallbackQuery
 from keyboards.start import *
+from db import Database
 
 
 
 router = Router()
-
+db = Database('database.db')
 
 @router.message(Command("start"))
 async def start_handler(message: types.Message):
@@ -17,6 +18,9 @@ async def start_handler(message: types.Message):
         BotCommand(command='version', description='Версия'),
         BotCommand(command='button', description='Добавить кнопки'),
     ])
+    if message.chat.type == 'private':
+        if not await db.user_exists(message.from_user.id):
+            await db.add_user(message.from_user.id)
 
     await message.answer(text='Привет! Нажми на кнопку, чтобы получить погоду или помощь. Вы можете выбрать: "Добавить кнопки", чтобы взаимодействие со мной стало еще удобнее', reply_markup=keyboard_start_next)
 
@@ -31,7 +35,7 @@ async def handle_buttons(callback_query: CallbackQuery):
 async def weather_callback_handler(callback_query: CallbackQuery):
     await callback_query.message.delete()
     await callback_query.message.answer(
-        text="Напиши название населенного пункта, либо название населенного пункта и время (в формате ЧЧ:ММ), чтобы я прислал прогноз погоды на указанное время.",
+        text="Напиши название населенного пункта, либо название населенного пункта и время (в формате ЧЧ:ММ), чтобы я прислал прогноз погоды на указанное время. Прогноз погоды могу выдать на каждые 3 часа, выбери подходщее для тебя время: 0:00, 3:00, 6:00, 9:00, 12:00, 15:00, 18:00, 21:00.",
         reply_markup=keyboard_back
     )
 
