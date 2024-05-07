@@ -1,9 +1,9 @@
 from aiogram import types, Router
 from aiogram.filters import Command
 from keyboards.start import *
-from weather_body import get_weather
 from db import Database
 from config import admin_tg_id
+from weather_func import get_weather_func
 
 
 router = Router()
@@ -18,19 +18,16 @@ async def handle_buttons(message: types.Message):
 
 @router.message(Command("weather"))
 async def weather_handler(message: types.Message):
-    if message.chat.type == 'private':
-        if not await db.user_exists(message.from_user.id):
-            await db.add_user(message.from_user.id)
-    await message.answer("Напиши название населенного пункта, либо название населенного пункта и время (в формате ЧЧ:ММ), чтобы я прислал прогноз погоды на указанное время. Прогноз погоды могу выдать на каждые 3 часа, выбери подходщее для тебя время: 0:00, 3:00, 6:00, 9:00, 12:00, 15:00, 18:00, 21:00.")
+    await message.answer("Напиши название населенного пункта, либо название населенного пункта и время (в формате ЧЧ:ММ), чтобы я прислал прогноз погоды на указанное время. Прогноз погоды могу выдать на каждые 3 часа, выбери подходщее для тебя время: 0:00, 3:00, 6:00, 9:00, 12:00, 15:00, 18:00, 21:00.", reply_markup=keyboard_back)
 
 @router.message(Command("help"))
 async def help_handler(message: types.Message):
     await message.answer("Я принимаю запросы на русском и английском языках. Чтобы получить прогноз погоды для вашего города, отправьте название города. Прогноз погоды могу выдать на каждые 3 часа, выбери подходщее для тебя время: 0:00, 3:00, 6:00, 9:00, 12:00, 15:00, 18:00, 21:00")
-    await message.answer('Запрос вводи в формате "Населенный пункт ЧЧ:ММ"')
+    await message.answer('Запрос вводи в формате "Населенный пункт ЧЧ:ММ"', reply_markup=keyboard_back)
 
 @router.message(Command("version"))
 async def version_handler(message: types.Message):
-    await message.answer("Обновление от 24 апреля 2024 года. Исправлены проблемы, связанные с работой кнопок в стартовом сообщении, а, также, ряд мелких ошибок. Если обнаружил баг, пиши: @e_gooor_abs")
+    await message.answer("Обновление от 24 апреля 2024 года. Исправлены проблемы, связанные с работой кнопок в стартовом сообщении, а, также, ряд мелких ошибок. Если обнаружил баг, пиши: @e_gooor_abs", reply_markup=keyboard_back)
 
 @router.message(Command("info"))
 async def team_handler(message: types.Message):
@@ -95,4 +92,4 @@ async def handle_text(message: types.Message):
     elif message.text == 'Кнопки':
         await handle_buttons(message)
     else:
-        await get_weather(message)
+        await get_weather_func(message)

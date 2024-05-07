@@ -1,31 +1,18 @@
 import datetime
 import requests
-from aiogram import Router, types, F
+from aiogram import Router, types
 from config import open_weather_token
 from keyboards.start import *
-from aiogram.fsm.context import FSMContext
-
 
 
 router = Router()
 
 
-@router.callback_query(F.data.startswith('weather_time_'))
-async def get_weather_handler(callback: types.CallbackQuery, state: FSMContext):
-    print(state, type(state))
-    data = await state.get_data()
-    print(data)
-    #async with state as data:
-    city = data.get('city', None)
-    time = data.get('time', None)
-
-
-    if city is None or time is None:
-        await callback.message.answer("Сначала укажите город и время для получения прогноза погоды.")
-        return
-
+@router.message()
+async def get_weather_func(message: types.Message):
     try:
-        time_obj = datetime.datetime.strptime(time, "%H:%M").time()
+        city, time_str = message.text.split(maxsplit=1)
+        time_obj = datetime.datetime.strptime(time_str, "%H:%M").time()
 
         r = requests.get(
             f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={open_weather_token}&units=metric"
@@ -59,16 +46,18 @@ async def get_weather_handler(callback: types.CallbackQuery, state: FSMContext):
             sunset_timestamp = datetime.datetime.fromtimestamp(data["city"]["sunset"])
             length_of_the_day = datetime.timedelta(seconds=data["city"]["sunset"] - data["city"]["sunrise"])
 
-            await callback.message.answer(f"***{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}***\n"
-                                f"Прогноз погоды в городе {city} на {time}:\n"
+
+            await message.reply(f"***{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}***\n"
+                                f"Прогноз погоды в городе {city} на {time_obj.strftime('%H:%M')}:\n"
                                 f"Температура: {cur_weather}C° {wd}\n"
                                 f"Влажность: {humidity}%\nДавление: {pressure} мм.рт.ст\nВетер: {wind} м/с\n"
                                 f"Восход солнца: {sunrise_timestamp}\nЗакат солнца: {sunset_timestamp}\nПродолжительность дня: {length_of_the_day}\n"
                                 f"***Хорошего дня!***",
-                                reply_markup=keyboard_share)
-            await state.clear()
+                                reply_markup=keyboard_share
+                                )
         else:
-            await callback.message.answer("Прогноз погоды на указанное время не найден.")
+            await message.reply("Прогноз погоды на указанное время не найден.")
+
 
     except ValueError:
         code_to_smile = {
@@ -82,11 +71,13 @@ async def get_weather_handler(callback: types.CallbackQuery, state: FSMContext):
         }
 
         try:
+
             r = requests.get(
-                f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={open_weather_token}&units=metric"
+                f"http://api.openweathermap.org/data/2.5/weather?q={message.text}&appid={open_weather_token}&units=metric"
             )
 
             data = r.json()
+            city = data["name"]
             cur_weather = data["main"]["temp"]
             weather_description = data["weather"][0]["main"]
             wd = code_to_smile.get(weather_description, "Посмотри в окно, не пойму что там за погода!")
@@ -97,22 +88,21 @@ async def get_weather_handler(callback: types.CallbackQuery, state: FSMContext):
             sunset_timestamp = datetime.datetime.fromtimestamp(data["sys"]["sunset"])
             length_of_the_day = datetime.timedelta(seconds=data["sys"]["sunset"] - data["sys"]["sunrise"])
 
-            await callback.message.reply(f"***{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}***\n"
+
+            await message.reply(f"***{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}***\n"
                                 f"Погода в городе: {city}\nТемпература: {cur_weather}C° {wd}\n"
                                 f"Влажность: {humidity}%\nДавление: {pressure} мм.рт.ст\nВетер: {wind} м/с\n"
                                 f"Восход солнца: {sunrise_timestamp}\nЗакат солнца: {sunset_timestamp}\nПродолжительность дня: {length_of_the_day}\n"
                                 f"***Хорошего дня!***",
                                 reply_markup=keyboard_share
                                 )
-            await state.clear()
+
 
         except:
-            await callback.message.answer("\U00002620 Извините, я не понимаю ваш запрос. Проверьте название города \U00002620")
-            await callback.message.answer("Предупреждение: Я принимаю запросы на русском и английском языках", reply_markup=keyboard_back)
+            await message.reply("\U00002620 Извините, я не понимаю ваш запрос. Проверьте название города \U00002620")
+            await message.reply("Предупреждение: Я принимаю запросы на русском и английском языках")
 
     except Exception as e:
         print(e)
-        await callback.message.answer("\U00002620 Что-то пошло не так. Пожалуйста, попробуйте позже. \U00002620")
-        await callback.message.answer("Предупреждение: Я принимаю запросы на русском и английском языках")
-        await callback.message.answer("Если ошибка сохраняется в течение длительного промежутка времени, обращайтесь к @e_gooor_abs с подробно-изложенной ситуацией")
-
+        await message.reply("\U00002620 Проверьте название города и формат времени \U00002620")
+        await message.reply("Предупреждение: Я принимаю запросы на русском и английском языках")

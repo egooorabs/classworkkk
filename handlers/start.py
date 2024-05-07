@@ -3,7 +3,7 @@ from aiogram.filters import Command
 from aiogram.types import BotCommand, CallbackQuery
 from keyboards.start import *
 from db import Database
-
+from aiogram.fsm.context import FSMContext
 
 
 router = Router()
@@ -57,8 +57,7 @@ async def weather_callback_handler(callback_query: CallbackQuery):
 
 @router.callback_query(F.data == 'back')
 async def back_handler(callback_query: CallbackQuery):
-    await callback_query.message.delete()
     await callback_query.message.answer(
         text="Нажми на кнопку, чтобы получить погоду или помощь.",
-        reply_markup=keyboard_back_next
+        reply_markup=keyboard_start_next
     )

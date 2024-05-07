@@ -1,120 +1,3 @@
-@router.message(Command("start"))
-async def start_handler(message: types.Message):
-    await bot.set_my_commands([
-        BotCommand(command='start', description='Запуск бота'),
-        BotCommand(command='help', description='Помощь'),
-        BotCommand(command='version', description='Версия'),
-    ])
-
-    inline_markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Вперед', callback_data='next')]
-    ])
-    await message.answer(text="Страница 1", reply_markup=inline_markup)
-
-@router.callback_query(F.data == 'next')
-async def next_handler(callback_query: CallbackQuery):
-    inline_markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Назад', callback_data='back')]
-    ])
-    await callback_query.message.delete()
-    await callback_query.message.answer(
-        text='Страница 2',
-        reply_markup=inline_markup
-    )
-
-@router.callback_query(F.data == 'back')
-async def back_handler(callback_query: CallbackQuery):
-    inline_markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Вперед', callback_data='next')]
-    ])
-    await callback_query.message.delete()
-    await callback_query.message.answer(
-        text="Страница 1",
-        reply_markup=inline_markup
-    )
-
-@router.callback_query(Command("start"))
-async def inline_handler(callback_query: CallbackQuery):
-    inline_markup = InlineKeyboardMarkup()
-    button1 = InlineKeyboardButton("Погода", callback_data="weather")
-    button2 = InlineKeyboardButton("Помощь", callback_data="help")
-    button3 = InlineKeyboardButton("Версия", callback_data="version")
-    inline_markup.add(button1, button2, button3)
-    await callback_query.message.answer("Выберите действие:", reply_markup=inline_markup)
-
-
-
-import asyncio
-from aiogram import Bot, Dispatcher, types, F, Router
-from aiogram.filters import Command
-from aiogram.types import BotCommand, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
-from config import open_weather_token, tg_bot_token
-import datetime
-import requests
-
-bot = Bot(token=tg_bot_token)
-dp = Dispatcher()
-
-router = Router()
-dp.include_router(router)
-
-
-@router.message(Command("start"))
-async def start_handler(message: types.Message):
-    inline_markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Погода', callback_data='weather')],
-        [InlineKeyboardButton(text='Помощь', callback_data='help')],
-        [InlineKeyboardButton(text='Версия', callback_data='version')]
-    ])
-
-    await bot.set_my_commands([
-        BotCommand(command='start', description='Запуск бота'),
-        BotCommand(command='help', description='Помощь'),
-        BotCommand(command='version', description='Версия'),
-    ])
-
-    await message.answer_text(text="Привет! Нажми на кнопку, чтобы получить погоду или помощь.", reply_markup=inline_markup)
-
-
-
-@router.callback_query(F.data == 'weather')
-async def weather_callback_handler(callback_query: CallbackQuery):
-    await callback_query.message.answer("Напиши название населенного пункта, либо название населенного пункта и время (в формате ЧЧ:ММ), чтобы я прислал прогноз погоды на указанное время.")
-
-@router.callback_query(F.data == 'help')
-async def help_callback_handler(callback_query: CallbackQuery):
-    await callback_query.message.answer("Я принимаю запросы на русском и английском языках. Чтобы получить прогноз погоды для вашего города, отправьте название города. Прогноз погоды могу выдать на каждые 3 часа, выбери подходщее для тебя время: 0:00, 3:00, 6:00, 9:00, 12:00, 15:00, 18:00, 21:00")
-    await callback_query.message.answer('Запрос вводи в формате "Населенный пункт ЧЧ:ММ"')
-
-@router.callback_query(F.data == 'version')
-async def version_callback_handler(callback_query: CallbackQuery):
-    await callback_query.message.answer("Обновление от 16 апреля 2024 года. Исправлены ошибки, связанные с распознаванием различных типов сообщений. Если обнаружил баг, пиши: @e_gooor_abs")
-
-
-@dp.message()
-async def handle_text(message: types.Message):
-    if message.text == 'Помощь':
-        await help_command(message)
-    elif message.text == 'Погода':
-        await weather_command(message)
-    elif message.text == 'Версия':
-        await version_command(message)
-    else:
-        await get_weather(message)
-
-async def help_command(message: types.Message):
-    await message.reply(
-        "Я принимаю запросы на русском и английском языках. Чтобы получить прогноз погоды для вашего города, отправьте название города. Прогноз погоды могу выдать на каждые 3 часа, выбери подходщее для тебя время: 0:00, 3:00, 6:00, 9:00, 12:00, 15:00, 18:00, 21:00")
-    await message.reply('Запрос вводи в формате "Населенный пункт ЧЧ:ММ"')
-
-async def weather_command(message: types.Message):
-    await message.reply(
-        "Напиши название населенного пункта, либо название населенного пункта и время (в формате ЧЧ:ММ), чтобы я прислал прогноз погоды на указанное время.")
-
-async def version_command(message: types.Message):
-    await message.reply("Обновление от 16 апреля 2024 года. Исправлены ошибки, связанные с распознаванием различных типов сообщений. Если обнаружил баг, пиши: @e_gooor_abs")
-
-
 
 @dp.message()
 async def get_weather(message: types.Message):
@@ -469,3 +352,310 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+@router.message()
+async def get_weather(message: types.Message):
+    try:
+        city, time_str = message.text.split(maxsplit=1)
+        time_obj = datetime.datetime.strptime(time_str, "%H:%M").time()
+
+        r = requests.get(
+            f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={open_weather_token}&units=metric"
+        )
+        data = r.json()
+
+        weather_forecast = None
+        for forecast in data['list']:
+            forecast_time = datetime.datetime.fromtimestamp(forecast['dt']).time()
+            if forecast_time.hour == time_obj.hour and forecast_time.minute == time_obj.minute:
+                weather_forecast = forecast
+                break
+
+        if weather_forecast:
+            cur_weather = weather_forecast["main"]["temp"]
+            weather_description = weather_forecast["weather"][0]["main"]
+            code_to_smile = {
+                "Clear": "Ясно \U00002600",
+                "Clouds": "Облачно \U00002601",
+                "Rain": "Дождь \U00002614",
+                "Drizzle": "Дождь \U00002614",
+                "Thunderstorm": "Гроза \U000026A1",
+                "Snow": "Снег \U0001F328",
+                "Mist": "Туман \U0001F32B"
+            }
+            wd = code_to_smile.get(weather_description, "Посмотри в окно, не пойму что там за погода!")
+            humidity = weather_forecast["main"]["humidity"]
+            pressure = weather_forecast["main"]["pressure"]
+            wind = weather_forecast["wind"]["speed"]
+            sunrise_timestamp = datetime.datetime.fromtimestamp(data["city"]["sunrise"])
+            sunset_timestamp = datetime.datetime.fromtimestamp(data["city"]["sunset"])
+            length_of_the_day = datetime.timedelta(seconds=data["city"]["sunset"] - data["city"]["sunrise"])
+
+
+            await message.reply(f"***{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}***\n"
+                                f"Прогноз погоды в городе {city} на {time_obj.strftime('%H:%M')}:\n"
+                                f"Температура: {cur_weather}C° {wd}\n"
+                                f"Влажность: {humidity}%\nДавление: {pressure} мм.рт.ст\nВетер: {wind} м/с\n"
+                                f"Восход солнца: {sunrise_timestamp}\nЗакат солнца: {sunset_timestamp}\nПродолжительность дня: {length_of_the_day}\n"
+                                f"***Хорошего дня!***",
+                                reply_markup=keyboard_share
+                                )
+        else:
+            await message.reply("Прогноз погоды на указанное время не найден.")
+
+
+    except ValueError:
+        code_to_smile = {
+            "Clear": "Ясно \U00002600",
+            "Clouds": "Облачно \U00002601",
+            "Rain": "Дождь \U00002614",
+            "Drizzle": "Дождь \U00002614",
+            "Thunderstorm": "Гроза \U000026A1",
+            "Snow": "Снег \U0001F328",
+            "Mist": "Туман \U0001F32B"
+        }
+
+        try:
+
+            r = requests.get(
+                f"http://api.openweathermap.org/data/2.5/weather?q={message.text}&appid={open_weather_token}&units=metric"
+            )
+
+            data = r.json()
+            city = data["name"]
+            cur_weather = data["main"]["temp"]
+            weather_description = data["weather"][0]["main"]
+            wd = code_to_smile.get(weather_description, "Посмотри в окно, не пойму что там за погода!")
+            humidity = data["main"]["humidity"]
+            pressure = data["main"]["pressure"]
+            wind = data["wind"]["speed"]
+            sunrise_timestamp = datetime.datetime.fromtimestamp(data["sys"]["sunrise"])
+            sunset_timestamp = datetime.datetime.fromtimestamp(data["sys"]["sunset"])
+            length_of_the_day = datetime.timedelta(seconds=data["sys"]["sunset"] - data["sys"]["sunrise"])
+
+
+            await message.reply(f"***{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}***\n"
+                                f"Погода в городе: {city}\nТемпература: {cur_weather}C° {wd}\n"
+                                f"Влажность: {humidity}%\nДавление: {pressure} мм.рт.ст\nВетер: {wind} м/с\n"
+                                f"Восход солнца: {sunrise_timestamp}\nЗакат солнца: {sunset_timestamp}\nПродолжительность дня: {length_of_the_day}\n"
+                                f"***Хорошего дня!***",
+                                reply_markup=keyboard_share
+                                )
+
+
+        except:
+            await message.reply("\U00002620 Извините, я не понимаю ваш запрос. Проверьте название города \U00002620")
+            await message.reply("Предупреждение: Я принимаю запросы на русском и английском языках")
+
+    except Exception as e:
+        print(e)
+        await message.reply("\U00002620 Проверьте название города и формат времени \U00002620")
+        await message.reply("Предупреждение: Я принимаю запросы на русском и английском языках")
+
+
+@router.message
+async def get_weather_function(message: types.Message):
+    from main import bot
+    @router.message()
+    async def get_weather(message: types.Message):
+        try:
+            await message.reply("Введите название города:")
+        except Exception as e:
+            print(e)
+
+    @router.callback_query(lambda c: c.data == '', state="*")
+    async def process_callback_button(message: types.Message):
+        try:
+            await bot.send_message(text="Выберите время:", reply_markup=keyboard_time)
+        except Exception as e:
+            print(e)
+
+    @router.callback_query(lambda c: c.data != '', state="*")
+    async def process_time_selection(callback_query: types.CallbackQuery):
+        try:
+            city = callback_query.message.text
+            time_str = callback_query.data
+            time_obj = datetime.datetime.strptime(time_str, "%H:%M").time()
+
+            await handle_weather_request(callback_query.message, city, time_obj)
+        except Exception as e:
+            print(e)
+
+    async def handle_weather_request(message, city, time_obj=None):
+        r = requests.get(
+            f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={open_weather_token}&units=metric"
+        )
+        data = r.json()
+
+        weather_forecast = None
+        if time_obj:
+            for forecast in data['list']:
+                forecast_time = datetime.datetime.fromtimestamp(forecast['dt']).time()
+                if forecast_time.hour == time_obj.hour and forecast_time.minute == time_obj.minute:
+                    weather_forecast = forecast
+                    break
+        else:
+            weather_forecast = data['list'][0]
+
+        if weather_forecast:
+            cur_weather = weather_forecast["main"]["temp"]
+            weather_description = weather_forecast["weather"][0]["main"]
+            code_to_smile = {
+                "Clear": "Ясно \U00002600",
+                "Clouds": "Облачно \U00002601",
+                "Rain": "Дождь \U00002614",
+                "Drizzle": "Дождь \U00002614",
+                "Thunderstorm": "Гроза \U000026A1",
+                "Snow": "Снег \U0001F328",
+                "Mist": "Туман \U0001F32B"
+            }
+            wd = code_to_smile.get(weather_description, "Посмотри в окно, не пойму что там за погода!")
+            humidity = weather_forecast["main"]["humidity"]
+            pressure = weather_forecast["main"]["pressure"]
+            wind = weather_forecast["wind"]["speed"]
+            sunrise_timestamp = datetime.datetime.fromtimestamp(data["city"]["sunrise"])
+            sunset_timestamp = datetime.datetime.fromtimestamp(data["city"]["sunset"])
+            length_of_the_day = datetime.timedelta(seconds=data["city"]["sunset"] - data["city"]["sunrise"])
+
+            await message.reply(f"***{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}***\n"
+                                f"Прогноз погоды в городе {city}:\n"
+                                f"Температура: {cur_weather}C° {wd}\n"
+                                f"Влажность: {humidity}%\nДавление: {pressure} мм.рт.ст\nВетер: {wind} м/с\n"
+                                f"Восход солнца: {sunrise_timestamp}\nЗакат солнца: {sunset_timestamp}\nПродолжительность дня: {length_of_the_day}\n"
+                                f"***Хорошего дня!***",
+                                reply_markup=keyboard_share
+                                )
+        else:
+            await message.reply("Прогноз погоды не найден.")
+    await message.reply('Что-то пошло не так:(')
+
+
+@router.message()
+async def get_weather(message: types.Message, state: FSMContext):
+    # Получаем данные о городе и времени из состояния
+    async with state.proxy() as data:
+        city = data.get('city')
+        time = data.get('time')
+
+    if city is None or time is None:
+        await message.reply("Сначала укажите город и время для получения прогноза погоды.")
+        return
+
+    try:
+        r = requests.get(
+            f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={open_weather_token}&units=metric"
+        )
+        data = r.json()
+
+        weather_forecast = None
+        for forecast in data['list']:
+            forecast_time = datetime.datetime.fromtimestamp(forecast['dt']).time()
+            if forecast_time.hour == time.hour and forecast_time.minute == time.minute:
+                weather_forecast = forecast
+                break
+
+        if weather_forecast:
+            cur_weather = weather_forecast["main"]["temp"]
+            weather_description = weather_forecast["weather"][0]["main"]
+            code_to_smile = {
+                "Clear": "Ясно \U00002600",
+                "Clouds": "Облачно \U00002601",
+                "Rain": "Дождь \U00002614",
+                "Drizzle": "Дождь \U00002614",
+                "Thunderstorm": "Гроза \U000026A1",
+                "Snow": "Снег \U0001F328",
+                "Mist": "Туман \U0001F32B"
+            }
+            wd = code_to_smile.get(weather_description, "Посмотри в окно, не пойму что там за погода!")
+            humidity = weather_forecast["main"]["humidity"]
+            pressure = weather_forecast["main"]["pressure"]
+            wind = weather_forecast["wind"]["speed"]
+            sunrise_timestamp = datetime.datetime.fromtimestamp(data["city"]["sunrise"])
+            sunset_timestamp = datetime.datetime.fromtimestamp(data["city"]["sunset"])
+            length_of_the_day = datetime.timedelta(seconds=data["city"]["sunset"] - data["city"]["sunrise"])
+
+            await message.reply(f"***{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}***\n"
+                                f"Прогноз погоды в городе {city} на {time_obj.strftime('%H:%M')}:\n"
+                                f"Температура: {cur_weather}C° {wd}\n"
+                                f"Влажность: {humidity}%\nДавление: {pressure} мм.рт.ст\nВетер: {wind} м/с\n"
+                                f"Восход солнца: {sunrise_timestamp}\nЗакат солнца: {sunset_timestamp}\nПродолжительность дня: {length_of_the_day}\n"
+                                f"***Хорошего дня!***",
+                                reply_markup=keyboard_share
+                                )
+        else:
+            await message.reply("Прогноз погоды на указанное время не найден.")
+
+
+    except Exception as e:
+        print(e)
+        await message.reply("Что-то пошло не так. Пожалуйста, попробуйте позже.")
+
+
+
+from aiogram import types, Router, F
+from aiogram.filters import Command
+from aiogram.types import Message, CallbackQuery
+from aiogram.fsm.context import FSMContext
+from states.weather_forecast import Weather_Forecast
+from keyboards.weather_forecast import *
+import datetime
+from weather_body import get_weather
+
+router = Router()
+
+@router.callback_query(F.data == 'forecast')
+async def forecast_callback_handler(callback_query: CallbackQuery, state: FSMContext):
+    await callback_query.message.answer('Введите название населенного пункта', reply_markup=forecast_cancel)
+    await state.set_state(Weather_Forecast.city)
+
+@router.message(Weather_Forecast.city)
+async def set_city_by_forecast_handler(message: Message, state: FSMContext):
+    await state.update_data(city=message.text)
+    await state.set_state(Weather_Forecast.time)
+    await message.answer("Выберите подходящее время", reply_markup=forecast_choose_time)
+
+@router.callback_query(F.data.startswith('time_') and Weather_Forecast.time)
+async def set_time_by_forecast_handler(callback_query: CallbackQuery,state: FSMContext):
+    time = {'time_0': '0:00', 'time_3': '3:00' }[callback_query.data]
+    await state.update_data(time=time)
+    await callback_query.message.answer(str(await state.get_data()))
+    await state.clear()
+
+
+@router.callback_query(F.data == 'weather_time_0')
+async def set_time_0_handler(callback_query: CallbackQuery, state: FSMContext):
+    time = datetime.datetime.strptime("00:00", "%H:%M").time()
+
+    # Сохраняем время в состоянии
+    await state.update_data(time=time)
+
+    # Отправляем сообщение об успешном выборе времени
+    await callback_query.message.answer("Время успешно выбрано: 00:00")
+
+    # Получаем город из состояния
+    data = await state.get_data()
+    city = data.get('city')
+    time = data.get('time')
+
+    # Проверяем, что город был сохранен в состоянии
+    if city is None:
+        await callback_query.answer("Сначала укажите город для получения прогноза погоды.")
+        return
+
+    # Вызываем функцию get_weather с передачей города и времени
+    await get_weather(city, time)
+
+@router.callback_query(Weather_Forecast.time)
+async def set_time_by_weather_forecast_handler(message: Message, state: FSMContext):
+    try:
+        await state.update_data(time=int)
+    except ValueError:
+        await message.answer('Вы неверно ввели время')
+        await message.answer(text='Выберите подходящее для вас время', reply_markup=forecast_choose_time)
+
+@router.callback_query(F.data == 'cancel_forecast')
+async def cancel_forecast(callback_query: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback_query.message.answer('Отмена запроса')
