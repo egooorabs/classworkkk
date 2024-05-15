@@ -1,9 +1,9 @@
 from aiogram import types, Router
 from aiogram.filters import Command
 from keyboards.start import *
+from weather_func import get_weather_func
 from db import Database
 from config import admin_tg_id
-from weather_func import get_weather_func
 
 
 router = Router()
@@ -18,6 +18,9 @@ async def handle_buttons(message: types.Message):
 
 @router.message(Command("weather"))
 async def weather_handler(message: types.Message):
+    if message.chat.type == 'private':
+        if not await db.user_exists(message.from_user.id):
+            await db.add_user(message.from_user.id)
     await message.answer("Напиши название населенного пункта, либо название населенного пункта и время (в формате ЧЧ:ММ), чтобы я прислал прогноз погоды на указанное время. Прогноз погоды могу выдать на каждые 3 часа, выбери подходщее для тебя время: 0:00, 3:00, 6:00, 9:00, 12:00, 15:00, 18:00, 21:00.", reply_markup=keyboard_back)
 
 @router.message(Command("help"))
@@ -31,11 +34,11 @@ async def version_handler(message: types.Message):
 
 @router.message(Command("info"))
 async def team_handler(message: types.Message):
-    await message.answer("С уважением, команда разработчиков NET")
+    await message.answer("С уважением, команда разработчиков NET", reply_markup=keyboard_back)
 
 @router.message(Command("main1"))
 async def developer_handler(message: types.Message):
-    await message.answer("Привет от @e_gooor_abs")
+    await message.answer("Привет от @e_gooor_abs", reply_markup=keyboard_back)
 
 @router.message(Command("send"))
 async def send_handler(message: types.Message):
