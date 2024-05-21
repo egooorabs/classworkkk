@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 from aiogram import types, Router, F
 from aiogram.filters import Command
 from aiogram.types import BotCommand, CallbackQuery, Message
@@ -28,11 +29,16 @@ async def set_time_handler(message: Message):
             user = User.get_by_id(1)
             user.time = SEND_TIME
             user.save()
+            await message.answer(text='Время успешно установлено!')
         except UserDoesNotExist:
             user = User.create(id=1, time=SEND_TIME)
             await message.answer(text='Время успешно установлено!')
-    except(ValueError, Exception):
-        await message.answer(text='Произошла ошибка')
+
+    except ValueError as e:
+        await message.answer(text=f'Ошибка: Некорректный формат времени. Пожалуйста, введите время в формате ЧЧ:ММ.')
+    except Exception as e:
+        await message.answer(text=f'Произошла ошибка: {e}')
+
 
 
 @router.message(Command("start"))
@@ -90,7 +96,6 @@ async def back_handler(callback_query: CallbackQuery):
     )
 
 
-
 async def get_time_notify():
     now = datetime.now()
     users = User.filter(User.time > now).order_by(User.time.asc())
@@ -123,3 +128,5 @@ async def send_admin():
 
 async def on_startup():
     asyncio.create_task(send_admin())
+
+

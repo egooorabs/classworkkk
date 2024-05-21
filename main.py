@@ -1,6 +1,6 @@
 import asyncio
 from aiogram import Bot, Dispatcher, Router
-from config import tg_bot_token
+from config import tg_bot_token, tg_bot_token_test
 from handlers import include_routers
 from db import Database
 from send_m_db import DB
@@ -9,7 +9,7 @@ from handlers.start import on_startup
 
 
 
-bot = Bot(token=tg_bot_token)
+bot = Bot(token=tg_bot_token_test)
 dp = Dispatcher()
 db = Database('database.db')
 dbb = DB('sqlite.db')

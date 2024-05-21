@@ -24,4 +24,5 @@ class UserDoesNotExist(Exception):
 
 dbb.connect()
 dbb.create_tables([User, Image, Send], safe=True)
+User.create(tg_user=1, time=None)
 dbb.close()
